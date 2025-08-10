@@ -565,7 +565,7 @@ export default function Page() {
   const [name, setName] = useState("")
   const [link, setLink] = useState("")
   const [tone, setTone] = useState<Tone>("plain")
-  const [withTags, setWithTags] = useState(true)
+  const [withTags, setWithTags] = useState(false)
   const [lengthKind, setLengthKind] = useState<LengthKind>("medium")
   const [loading, setLoading] = useState(false)
   const [copyText, setCopyText] = useState("")
@@ -575,6 +575,10 @@ export default function Page() {
   const [coverOrigin, setCoverOrigin] = useState<"url" | "upload" | "">("")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const prevBlobUrlRef = useRef<string | null>(null)
+  
+  // 自定义提示词相关状态
+  const [customPrompt, setCustomPrompt] = useState("")
+  const [showCustomPromptInput, setShowCustomPromptInput] = useState(false)
 
   // 裁剪弹窗
   const [cropOpen, setCropOpen] = useState(false)
@@ -646,6 +650,67 @@ export default function Page() {
     }
     const url = `https://image.baidu.com/search/index?tn=baiduimage&ie=utf-8&word=${encodeURIComponent(q)}`
     window.open(url, "_blank", "noopener,noreferrer")
+  }
+
+  const openAIWenxin = () => {
+    // 选择使用默认提示词还是自定义提示词
+    const finalPrompt = customPrompt.trim() || `【角色】
+你是一个网盘资源分享大师，擅长发现用户痛点，擅长按照用户的资源名称来给大家推荐/分享各类资源
+
+【任务】
+你要根据用户想分享的资料，写一份100字以内的分享文案
+
+【要求】
+1，能吸引大家保存
+2，能让大家都觉得你推荐/分享的资源很棒
+
+【资源信息】
+资源名称：${name.trim()}
+资源类型：${CATEGORY_LABEL[effectiveCategory]}
+文案风格：${tone === "plain" ? "朴素" : tone === "marketing" ? "营销" : tone === "fun" ? "风趣" : tone === "pro" ? "专业" : tone === "warm" ? "治愈" : "潮流"}
+文案长度：${LENGTH_RANGE[lengthKind].label}
+是否添加话题标签：${withTags ? "是" : "否"}
+网盘链接：${link.trim() || "无"}
+
+请直接输出文案内容，不要包含其他说明文字。`
+    
+    // 先复制提示词到剪贴板
+    navigator.clipboard.writeText(finalPrompt).then(() => {
+      // 显示成功提示
+      toast({ 
+        title: "提示词已复制到剪贴板", 
+        description: customPrompt.trim() ? "自定义提示词已准备就绪" : "默认提示词已准备就绪",
+        duration: 3000
+      })
+      
+      // 延迟打开文心一言，让用户看到提示
+      setTimeout(() => {
+        const url = `https://yiyan.baidu.com/`
+        window.open(url, "_blank", "noopener,noreferrer")
+        
+        // 显示使用说明
+        toast({ 
+          title: "已打开文心一言", 
+          description: "请按 Ctrl+V (Mac: Cmd+V) 粘贴提示词到对话框中",
+          duration: 5000
+        })
+      }, 500)
+      
+    }).catch(() => {
+      // 如果复制失败，显示提示词内容
+      toast({ 
+        title: "复制失败", 
+        description: "请手动复制以下提示词",
+        duration: 5000
+      })
+      
+      // 打开文心一言
+      const url = `https://yiyan.baidu.com/`
+      window.open(url, "_blank", "noopener,noreferrer")
+      
+      // 在控制台显示提示词
+      console.log("提示词内容：", finalPrompt)
+    })
   }
 
   const applyCoverUrl = (value: string) => {
@@ -791,140 +856,172 @@ export default function Page() {
                   <RadioGroup
                     value={tone}
                     onValueChange={(v) => setTone(v as Tone)}
-                    className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+                    className="grid grid-cols-2 gap-3 sm:grid-cols-3"
                   >
                     <div
                       className={cn(
-                        "flex items-center space-x-2 rounded-md border p-2 hover:bg-muted/40 cursor-pointer select-none",
+                        "relative flex items-center justify-center rounded-lg border-2 p-3 cursor-pointer select-none transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
+                        "hover:bg-slate-50 hover:border-slate-300",
+                        tone === "plain" && "bg-slate-100 border-slate-400 shadow-md scale-[1.02]",
                         btnFx,
                       )}
+                      onClick={() => setTone("plain")}
                       onMouseDown={ripple}
                     >
-                      <RadioGroupItem value="plain" id="plain" />
-                      <Label htmlFor="plain" className="cursor-pointer">
+                      <RadioGroupItem value="plain" id="plain" className="sr-only" />
+                      <Label htmlFor="plain" className="cursor-pointer font-medium text-slate-700">
                         朴素
                       </Label>
                     </div>
                     <div
                       className={cn(
-                        "flex items-center space-x-2 rounded-md border p-2 hover:bg-muted/40 cursor-pointer select-none",
+                        "relative flex items-center justify-center rounded-lg border-2 p-3 cursor-pointer select-none transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
+                        "hover:bg-orange-50 hover:border-orange-300",
+                        tone === "marketing" && "bg-orange-100 border-orange-400 shadow-md scale-[1.02]",
                         btnFx,
                       )}
+                      onClick={() => setTone("marketing")}
                       onMouseDown={ripple}
                     >
-                      <RadioGroupItem value="marketing" id="marketing" />
-                      <Label htmlFor="marketing" className="cursor-pointer">
+                      <RadioGroupItem value="marketing" id="marketing" className="sr-only" />
+                      <Label htmlFor="marketing" className="cursor-pointer font-medium text-orange-700">
                         营销
                       </Label>
                     </div>
                     <div
                       className={cn(
-                        "flex items-center space-x-2 rounded-md border p-2 hover:bg-muted/40 cursor-pointer select-none",
+                        "relative flex items-center justify-center rounded-lg border-2 p-3 cursor-pointer select-none transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
+                        "hover:bg-yellow-50 hover:border-yellow-300",
+                        tone === "fun" && "bg-yellow-100 border-yellow-400 shadow-md scale-[1.02]",
                         btnFx,
                       )}
+                      onClick={() => setTone("fun")}
                       onMouseDown={ripple}
                     >
-                      <RadioGroupItem value="fun" id="fun" />
-                      <Label htmlFor="fun" className="cursor-pointer">
+                      <RadioGroupItem value="fun" id="fun" className="sr-only" />
+                      <Label htmlFor="fun" className="cursor-pointer font-medium text-yellow-700">
                         风趣
                       </Label>
                     </div>
                     <div
                       className={cn(
-                        "flex items-center space-x-2 rounded-md border p-2 hover:bg-muted/40 cursor-pointer select-none",
+                        "relative flex items-center justify-center rounded-lg border-2 p-3 cursor-pointer select-none transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
+                        "hover:bg-blue-50 hover:border-blue-300",
+                        tone === "pro" && "bg-blue-100 border-blue-400 shadow-md scale-[1.02]",
                         btnFx,
                       )}
+                      onClick={() => setTone("pro")}
                       onMouseDown={ripple}
                     >
-                      <RadioGroupItem value="pro" id="pro" />
-                      <Label htmlFor="pro" className="cursor-pointer">
+                      <RadioGroupItem value="pro" id="pro" className="sr-only" />
+                      <Label htmlFor="pro" className="cursor-pointer font-medium text-blue-700">
                         专业
                       </Label>
                     </div>
                     <div
                       className={cn(
-                        "flex items-center space-x-2 rounded-md border p-2 hover:bg-muted/40 cursor-pointer select-none",
+                        "relative flex items-center justify-center rounded-lg border-2 p-3 cursor-pointer select-none transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
+                        "hover:bg-pink-50 hover:border-pink-300",
+                        tone === "warm" && "bg-pink-100 border-pink-400 shadow-md scale-[1.02]",
                         btnFx,
                       )}
+                      onClick={() => setTone("warm")}
                       onMouseDown={ripple}
                     >
-                      <RadioGroupItem value="warm" id="warm" />
-                      <Label htmlFor="warm" className="cursor-pointer">
+                      <RadioGroupItem value="warm" id="warm" className="sr-only" />
+                      <Label htmlFor="warm" className="cursor-pointer font-medium text-pink-700">
                         治愈
                       </Label>
                     </div>
                     <div
                       className={cn(
-                        "flex items-center space-x-2 rounded-md border p-2 hover:bg-muted/40 cursor-pointer select-none",
+                        "relative flex items-center justify-center rounded-lg border-2 p-3 cursor-pointer select-none transition-all duration-200 hover:scale-[1.02] hover:shadow-md",
+                        "hover:bg-purple-50 hover:border-purple-300",
+                        tone === "trendy" && "bg-purple-100 border-purple-400 shadow-md scale-[1.02]",
                         btnFx,
                       )}
+                      onClick={() => setTone("trendy")}
                       onMouseDown={ripple}
                     >
-                      <RadioGroupItem value="trendy" id="trendy" />
-                      <Label htmlFor="trendy" className="cursor-pointer">
+                      <RadioGroupItem value="trendy" id="trendy" className="sr-only" />
+                      <Label htmlFor="trendy" className="cursor-pointer font-medium text-purple-700">
                         潮流
                       </Label>
                     </div>
                   </RadioGroup>
                 </div>
 
-                {/* 文案长度 - 分段式美化（对比度优化） */}
+                {/* 文案长度 - 重新设计 */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <Label>文案长度</Label>
-                    <span className="text-xs text-muted-foreground">当前目标：{LENGTH_RANGE[lengthKind].label}</span>
+                    <span className="text-xs font-medium text-sky-700 bg-sky-100 px-2 py-1 rounded-full">
+                      目标：{LENGTH_RANGE[lengthKind].label}
+                    </span>
                   </div>
-                  <Tabs value={lengthKind} onValueChange={(v) => setLengthKind(v as LengthKind)}>
-                    <TabsList className="grid w-full grid-cols-3 rounded-lg border border-slate-200 bg-white p-1 shadow-[inset_0_0_0_1px_rgba(0,0,0,0.02)]">
-                      <TabsTrigger
-                        value="short"
-                        className={cn(
-                          "flex flex-col items-center gap-1 rounded-md py-2 hover:bg-slate-50 text-slate-700",
-                          "data-[state=active]:bg-sky-100 data-[state=active]:text-sky-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-sky-200",
-                          btnFx,
-                        )}
-                        onMouseDown={ripple}
-                      >
-                        <span className="text-sm font-semibold tracking-wide">短</span>
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium leading-none text-slate-700 ring-1 ring-slate-200 data-[state=active]:bg-white data-[state=active]:text-sky-800 data-[state=active]:ring-sky-200">
-                          {LENGTH_RANGE.short.label}
-                        </span>
-                      </TabsTrigger>
+                  
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      onClick={() => setLengthKind("short")}
+                      className={cn(
+                        "relative flex flex-col items-center gap-2 rounded-lg border-2 p-3 transition-all duration-200",
+                        "hover:bg-slate-50 hover:border-slate-300 hover:scale-[1.02]",
+                        lengthKind === "short" 
+                          ? "bg-sky-50 border-sky-300 text-sky-800 shadow-md" 
+                          : "bg-white border-slate-200 text-slate-600",
+                        btnFx,
+                      )}
+                      onMouseDown={ripple}
+                    >
+                      <span className="text-sm font-bold">短</span>
+                      <span className="text-xs font-medium bg-white/80 px-2 py-1 rounded-full border border-slate-200">
+                        {LENGTH_RANGE.short.label}
+                      </span>
+                    </button>
 
-                      <TabsTrigger
-                        value="medium"
-                        className={cn(
-                          "flex flex-col items-center gap-1 rounded-md py-2 hover:bg-slate-50 text-slate-700",
-                          "data-[state=active]:bg-indigo-100 data-[state=active]:text-indigo-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-indigo-200",
-                          btnFx,
-                        )}
-                        onMouseDown={ripple}
-                      >
-                        <span className="text-sm font-semibold tracking-wide">适中</span>
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium leading-none text-slate-700 ring-1 ring-slate-200 data-[state=active]:bg-white data-[state=active]:text-indigo-800 data-[state=active]:ring-indigo-200">
-                          {LENGTH_RANGE.medium.label}
-                        </span>
-                      </TabsTrigger>
+                    <button
+                      onClick={() => setLengthKind("medium")}
+                      className={cn(
+                        "relative flex flex-col items-center gap-2 rounded-lg border-2 p-3 transition-all duration-200",
+                        "hover:bg-slate-50 hover:border-slate-300 hover:scale-[1.02]",
+                        lengthKind === "medium" 
+                          ? "bg-indigo-50 border-indigo-300 text-indigo-800 shadow-md" 
+                          : "bg-white border-slate-200 text-slate-600",
+                        btnFx,
+                      )}
+                      onMouseDown={ripple}
+                    >
+                      <span className="text-sm font-bold">适中</span>
+                      <span className="text-xs font-medium bg-white/80 px-2 py-1 rounded-full border border-slate-200">
+                        {LENGTH_RANGE.medium.label}
+                      </span>
+                    </button>
 
-                      <TabsTrigger
-                        value="long"
-                        className={cn(
-                          "flex flex-col items-center gap-1 rounded-md py-2 hover:bg-slate-50 text-slate-700",
-                          "data-[state=active]:bg-violet-100 data-[state=active]:text-violet-900 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-violet-200",
-                          btnFx,
-                        )}
-                        onMouseDown={ripple}
-                      >
-                        <span className="text-sm font-semibold tracking-wide">偏长</span>
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium leading-none text-slate-700 ring-1 ring-slate-200 data-[state=active]:bg-white data-[state=active]:text-violet-800 data-[state=active]:ring-violet-200">
-                          {LENGTH_RANGE.long.label}
-                        </span>
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                  <p className="inline-block rounded-md bg-sky-50 px-2 py-1 text-xs text-sky-800">
-                    将在范围内智能扩展，并尽量在句号处截断，保证阅读顺滑。
-                  </p>
+                    <button
+                      onClick={() => setLengthKind("long")}
+                      className={cn(
+                        "relative flex flex-col items-center gap-2 rounded-lg border-2 p-3 transition-all duration-200",
+                        "hover:bg-slate-50 hover:border-slate-300 hover:scale-[1.02]",
+                        lengthKind === "long" 
+                          ? "bg-violet-50 border-violet-300 text-violet-800 shadow-md" 
+                          : "bg-white border-slate-200 text-slate-600",
+                        btnFx,
+                      )}
+                      onMouseDown={ripple}
+                    >
+                      <span className="text-sm font-bold">偏长</span>
+                      <span className="text-xs font-medium bg-white/80 px-2 py-1 rounded-full border border-slate-200">
+                        {LENGTH_RANGE.long.label}
+                      </span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-sky-50 to-blue-50 px-3 py-2 border border-sky-200">
+                    <div className="w-2 h-2 bg-sky-400 rounded-full animate-pulse"></div>
+                    <p className="text-xs text-sky-800 font-medium">
+                      将在范围内智能扩展，并尽量在句号处截断，保证阅读顺滑。
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between rounded-md border p-3">
@@ -1017,6 +1114,89 @@ export default function Page() {
                   <Button size="sm" onClick={regenerate} disabled={!canGenerate} className={btnFx} onMouseDown={ripple}>
                     换一版
                   </Button>
+                  
+                  {/* AI工具按钮 */}
+                  <div className="flex items-center gap-2 ml-auto">
+                    <div className="flex flex-col items-end gap-2">
+                      {/* 提示词选择区域 */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-muted-foreground">默认提示词</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setShowCustomPromptInput(!showCustomPromptInput)
+                            if (showCustomPromptInput) {
+                              setCustomPrompt("")
+                            }
+                          }}
+                          className={cn("h-6 px-2 text-[10px]", btnFx)}
+                          onMouseDown={ripple}
+                        >
+                          {showCustomPromptInput ? "取消" : "自定义"}
+                        </Button>
+                      </div>
+                      
+                      {/* 自定义提示词输入框 */}
+                      {showCustomPromptInput && (
+                        <div className="flex flex-col gap-2 w-full min-w-[200px]">
+                          <Textarea
+                            placeholder="输入自定义提示词..."
+                            value={customPrompt}
+                            onChange={(e) => setCustomPrompt(e.target.value)}
+                            className="min-h-[60px] text-xs resize-none"
+                          />
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setShowCustomPromptInput(false)}
+                              className={cn("h-6 px-2 text-[10px]", btnFx)}
+                              onMouseDown={ripple}
+                            >
+                              确认
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setCustomPrompt("")}
+                              className={cn("h-6 px-2 text-[10px]", btnFx)}
+                              onMouseDown={ripple}
+                            >
+                              清空
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* 文心一言按钮 */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={openAIWenxin}
+                        disabled={!name.trim()}
+                        className={cn("bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100", btnFx)}
+                        onMouseDown={ripple}
+                        title="使用文心一言生成更优质的文案"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="currentColor"/>
+                            <path d="M19 15L19.5 17L22 17.5L19.5 18L19 20L18.5 18L16 17.5L18.5 17L19 15Z" fill="currentColor"/>
+                            <path d="M5 15L5.5 17L8 17.5L5.5 18L5 20L4.5 18L2 17.5L4.5 17L5 15Z" fill="currentColor"/>
+                          </svg>
+                          <span className="text-xs font-medium">文心一言</span>
+                        </div>
+                      </Button>
+                      
+                      <span className="text-[10px] text-muted-foreground">
+                        {customPrompt.trim() ? "自定义提示词" : "默认提示词"}
+                      </span>
+                      <span className="text-[10px] text-blue-600 font-medium">
+                        点击后自动复制到剪贴板
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 {link ? <div className="break-all text-xs text-muted-foreground">链接：{link}</div> : null}
               </CardContent>
@@ -1046,65 +1226,98 @@ export default function Page() {
                   )}
                 </div>
 
-                <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-                  <div className="space-y-2">
-                    <Label htmlFor="cover-url">封面图链接（可选）</Label>
-                    <Input
-                      id="cover-url"
-                      placeholder="从百度图片复制图片链接后粘贴到这里"
-                      value={coverUrl}
-                      onChange={(e) => applyCoverUrl(e.target.value)}
-                    />
-                    <p className="text-xs text-teal-700">
-                      来源：{coverOrigin === "upload" ? "本地上传" : coverUrl ? "外链" : "未设置"}
-                    </p>
+                <div className="space-y-4">
+                  {/* 链接输入区域 */}
+                  <div className="space-y-3">
+                    <Label htmlFor="cover-url" className="text-sm font-medium text-slate-700">
+                      封面图链接（可选）
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="cover-url"
+                        placeholder="从百度图片复制图片链接后粘贴到这里"
+                        value={coverUrl}
+                        onChange={(e) => applyCoverUrl(e.target.value)}
+                        className="pr-20"
+                      />
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                        <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">
+                          {coverOrigin === "upload" ? "本地上传" : coverUrl ? "外链" : "未设置"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap items-end gap-2 md:items-center md:justify-end">
-                    <Button
-                      type="button"
-                      onClick={openBaiduImages}
-                      variant="secondary"
-                      className={btnFx}
-                      onMouseDown={ripple}
-                    >
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      去百度选封面
-                    </Button>
-                    <Button type="button" onClick={triggerUpload} className={btnFx} onMouseDown={ripple}>
-                      <ImagePlus className="mr-2 h-4 w-4" />
-                      上传图片
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={() => setCropOpen(true)}
-                      variant="outline"
-                      disabled={!coverUrl}
-                      title="调整封面位置/裁剪"
-                      className={btnFx}
-                      onMouseDown={ripple}
-                    >
-                      <Scissors className="mr-2 h-4 w-4" />
-                      调整/裁剪
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={clearCover}
-                      variant="ghost"
-                      disabled={!coverUrl}
-                      title="清除封面"
-                      className={btnFx}
-                      onMouseDown={ripple}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
+                  {/* 操作按钮区域 */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-slate-700">操作选项</span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          onClick={openBaiduImages}
+                          variant="outline"
+                          size="sm"
+                          className={cn("h-8 px-3", btnFx)}
+                          onMouseDown={ripple}
+                        >
+                          <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                          去百度选封面
+                        </Button>
+                        <Button 
+                          type="button" 
+                          onClick={triggerUpload} 
+                          size="sm"
+                          className={cn("h-8 px-3", btnFx)} 
+                          onMouseDown={ripple}
+                        >
+                          <ImagePlus className="mr-1.5 h-3.5 w-3.5" />
+                          上传图片
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-slate-700">编辑工具</span>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          onClick={() => setCropOpen(true)}
+                          variant="outline"
+                          size="sm"
+                          disabled={!coverUrl}
+                          title="调整封面位置/裁剪"
+                          className={cn("h-8 px-3", btnFx)}
+                          onMouseDown={ripple}
+                        >
+                          <Scissors className="mr-1.5 h-3.5 w-3.5" />
+                          调整/裁剪
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={clearCover}
+                          variant="ghost"
+                          size="sm"
+                          disabled={!coverUrl}
+                          title="清除封面"
+                          className={cn("h-8 px-3 text-red-600 hover:text-red-700 hover:bg-red-50", btnFx)}
+                          onMouseDown={ripple}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
                   </div>
+
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onFileChange} />
                 </div>
 
-                <p className="text-xs text-teal-700/80 bg-teal-50 rounded-md px-2 py-1">
-                  提示：裁剪功能优先用于“本地上传”的图片；部分外链图片因跨域限制可能无法导出裁剪结果。
-                </p>
+                <div className="flex items-start gap-2 rounded-lg bg-gradient-to-r from-teal-50 to-emerald-50 px-3 py-2.5 border border-teal-200">
+                  <div className="w-1.5 h-1.5 bg-teal-400 rounded-full mt-1.5 flex-shrink-0"></div>
+                  <p className="text-xs text-teal-800 font-medium leading-relaxed">
+                    提示：裁剪功能优先用于"本地上传"的图片；部分外链图片因跨域限制可能无法导出裁剪结果。
+                  </p>
+                </div>
               </CardContent>
             </AccentCard>
           </div>
