@@ -9,6 +9,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // 确保输出兼容Vercel
+  output: 'standalone',
 }
 
 export default nextConfig
