@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Copy, ExternalLink, ImagePlus, Loader2, RotateCcw, Scissors, Trash2, Sparkles, Download } from "lucide-react"
 import { cn } from "@/lib/utils"
 import CoverCropper from "@/components/cover-cropper"
-import ImageGenerator from "@/components/image-generator"
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // Accent wrapper (dopamine colors)
@@ -586,7 +586,7 @@ export default function Page() {
   const [cropOpen, setCropOpen] = useState(false)
   
   // 图片生成器弹窗
-  const [imageGeneratorOpen, setImageGeneratorOpen] = useState(false)
+
   
   // HTML代码输入器弹窗
   const [htmlInputOpen, setHtmlInputOpen] = useState(false)
@@ -910,83 +910,93 @@ export default function Page() {
     const categoryDescriptions = {
       app: {
         style: "科技感界面设计，包含应用图标和现代化UI元素",
-        background: "蓝色渐变背景，体现科技感",
-        mainColor: "蓝色系，专业且现代",
-        elements: "应用图标、界面元素、科技线条"
+        background: "深蓝到浅蓝的渐变背景，营造科技感和专业氛围",
+        mainColor: "蓝色系主色调，搭配白色和银色点缀",
+        elements: "应用图标、界面元素、科技线条、按钮、菜单",
+        keywords: "科技、应用、界面、现代、专业"
       },
       video: {
         style: "电影海报设计，包含影视元素和戏剧性光影",
-        background: "深色渐变背景，营造观影氛围",
-        mainColor: "深色系配金色或白色",
-        elements: "电影胶片、播放按钮、影视元素"
+        background: "深黑到深蓝的渐变背景，营造电影院的观影氛围",
+        mainColor: "深色系主色调，配以金色和白色高光点缀",
+        elements: "电影胶片、播放按钮、影视元素、光影效果",
+        keywords: "电影、影视、海报、光影、戏剧"
       },
       course: {
         style: "教育主题设计，包含学习图标和知识元素",
-        background: "蓝色渐变背景，体现专业学习氛围",
-        mainColor: "蓝色系，专业且可信",
-        elements: "书本、学习图标、知识传递"
+        background: "天蓝到深蓝的渐变背景，营造专业学习环境",
+        mainColor: "蓝色系主色调，搭配橙色和绿色辅助色",
+        elements: "书本、学习图标、知识传递、教育元素",
+        keywords: "教育、学习、知识、专业、可信"
       },
       ebook: {
         style: "书籍封面设计，包含阅读元素和知识图标",
-        background: "暖色调渐变背景，营造阅读氛围",
-        mainColor: "暖色系，温馨且易读",
-        elements: "电子书、文档、阅读场景"
+        background: "米白到暖黄的渐变背景，营造温馨的阅读氛围",
+        mainColor: "暖色系主色调，搭配棕色和米色辅助色",
+        elements: "电子书、文档、阅读场景、书签",
+        keywords: "书籍、阅读、知识、温馨、易读"
       },
       template: {
         style: "设计模板风格，包含创意元素和设计图标",
-        background: "多彩渐变背景，体现创意设计",
-        mainColor: "多彩系，创意且活力",
-        elements: "设计模板、创意元素、工具图标"
+        background: "彩虹渐变背景，展现创意设计的无限可能",
+        mainColor: "多彩系主色调，搭配白色和灰色平衡色",
+        elements: "设计模板、创意元素、工具图标、色彩搭配",
+        keywords: "设计、创意、模板、色彩、活力"
       },
       music: {
         style: "音乐专辑设计，包含音符元素和动感线条",
-        background: "紫色渐变背景，营造音乐氛围",
-        mainColor: "紫色系，动感且艺术",
-        elements: "音符、音乐波形、音频元素"
+        background: "深紫到粉紫的渐变背景，营造音乐的艺术氛围",
+        mainColor: "紫色系主色调，搭配金色和银色点缀",
+        elements: "音符、音乐波形、音频元素、乐器",
+        keywords: "音乐、音符、动感、艺术、旋律"
       },
       game: {
         style: "游戏主题设计，包含游戏元素和炫酷效果",
-        background: "深色渐变背景，营造游戏氛围",
-        mainColor: "深色系配亮色，炫酷且吸引",
-        elements: "游戏手柄、像素风格、游戏元素"
+        background: "深黑到霓虹蓝的渐变背景，营造游戏的刺激氛围",
+        mainColor: "深色系主色调，配以霓虹色和荧光色点缀",
+        elements: "游戏手柄、像素风格、游戏元素、特效",
+        keywords: "游戏、炫酷、刺激、像素、特效"
       },
       font: {
         style: "字体设计风格，包含文字排版元素",
-        background: "黑白简约背景，体现设计专业",
-        mainColor: "黑白系，简约且专业",
-        elements: "字体展示、排版设计、文字艺术"
+        background: "纯白到浅灰的渐变背景，体现设计的简洁专业",
+        mainColor: "黑白系主色调，搭配红色和蓝色强调色",
+        elements: "字体展示、排版设计、文字艺术、字母",
+        keywords: "字体、排版、设计、简洁、专业"
       },
       wallpaper: {
         style: "壁纸风格设计，包含自然风景和视觉元素",
-        background: "自然色彩渐变背景，体现美感",
-        mainColor: "自然色系，美观且舒适",
-        elements: "精美壁纸、自然风景、艺术设计"
+        background: "自然色彩渐变背景，展现大自然的美丽和和谐",
+        mainColor: "自然色系主色调，搭配绿色和蓝色自然色",
+        elements: "精美壁纸、自然风景、艺术设计、色彩",
+        keywords: "壁纸、自然、风景、美观、舒适"
       },
       data: {
         style: "数据报告设计，包含图表元素和商务图标",
-        background: "蓝色商务背景，体现专业氛围",
-        mainColor: "蓝色系，专业且可信",
-        elements: "数据图表、分析报告、信息可视化"
+        background: "深蓝到浅蓝的商务渐变背景，营造专业可信的氛围",
+        mainColor: "蓝色系主色调，搭配橙色和绿色数据色",
+        elements: "数据图表、分析报告、信息可视化、商务元素",
+        keywords: "数据、报告、商务、专业、可信"
       },
       dev: {
         style: "开发编程设计，包含代码元素和技术图标",
-        background: "深色渐变背景，营造技术氛围",
-        mainColor: "深色系配亮色，技术感强",
-        elements: "代码编辑器、编程元素、技术图标"
+        background: "深黑到深绿的渐变背景，营造编程的技术氛围",
+        mainColor: "深色系主色调，配以绿色和青色代码色",
+        elements: "代码编辑器、编程元素、技术图标、代码",
+        keywords: "开发、编程、技术、代码、科技"
       },
       unknown: {
         style: "通用设计风格，现代简约且专业",
-        background: "渐变背景，与资源类型相协调",
-        mainColor: "与资源类型相协调的专业色彩",
-        elements: "通用设计元素，现代简约风格"
+        background: "现代渐变背景，体现专业性和现代感",
+        mainColor: "专业色彩搭配，体现资源特色",
+        elements: "通用设计元素，现代简约风格",
+        keywords: "通用、现代、简约、专业"
       }
     }
     
     const desc = categoryDescriptions[category] || categoryDescriptions.unknown
     
-    const imagePrompt = `【即梦AI生图提示词】
-
-资源名称：${q}
+    const imagePrompt = `资源名称：${q}
 资源类型：${categoryName}
 
 请根据以上资源信息，生成一张高质量的封面图片，要求：
@@ -1003,6 +1013,7 @@ ${desc.style}
 背景：${desc.background}
 主色调：${desc.mainColor}
 装饰元素：${desc.elements}
+关键词：${desc.keywords}
 文字：白色或深色，确保可读性
 整体效果：专业、现代、吸引眼球
 
@@ -1099,7 +1110,7 @@ ${desc.style}
             {"网盘资源分享文案生成器"}
           </h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            输入资源名称与链接：自动识别类型并生成功能性中文文案。封面图可选：去百度挑选或上传并裁剪，支持多种比例自适应。一键生成包含资源名称的封面图片。
+            输入资源名称与链接：自动识别类型并生成功能性中文文案。封面图可选：去百度挑选或上传并裁剪，支持多种比例自适应。
           </p>
         </header>
 
@@ -1648,19 +1659,7 @@ ${desc.style}
                           <Sparkles className="mr-1.5 h-3.5 w-3.5" />
                           DeepSeek
                         </Button>
-                        <Button
-                          type="button"
-                          onClick={() => setImageGeneratorOpen(true)}
-                          variant="outline"
-                          size="sm"
-                          disabled={!name.trim()}
-                          title="生成包含资源名称的封面图片"
-                          className={cn("h-8 px-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200 hover:from-blue-100 hover:to-cyan-100", btnFx)}
-                          onMouseDown={ripple}
-                        >
-                          <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-                          生成封面
-                        </Button>
+
                         <Button
                           type="button"
                           onClick={() => setHtmlInputOpen(true)}
@@ -1697,7 +1696,7 @@ ${desc.style}
                     <p>💡 <strong>功能提示：</strong></p>
                     <p>• 支持多种比例自适应裁剪，适合不同平台分享需求</p>
                     <p>• 即梦AI可根据资源类型生成专业的生图提示词</p>
-                    <p>• 生成封面功能支持多种尺寸和样式自定义</p>
+
                     <p>• DeepSeek可生成专业的封面HTML文件</p>
                     <p>• HTML输入器可预览并下载为高质量图片</p>
                     <p>• 所有功能都支持自适应，无需强制16:9限制</p>
@@ -1730,13 +1729,7 @@ ${desc.style}
           }}
         />
 
-        {/* 图片生成器弹窗 */}
-        <ImageGenerator
-          open={imageGeneratorOpen}
-          resourceName={name}
-          coverUrl={coverUrl}
-          onClose={() => setImageGeneratorOpen(false)}
-        />
+
 
         {/* HTML代码输入器弹窗 */}
         <Dialog open={htmlInputOpen} onOpenChange={setHtmlInputOpen}>
