@@ -20,16 +20,17 @@ type ImageGeneratorProps = {
 
 // 预设的样式主题
 const STYLE_THEMES = [
-  { value: "modern", label: "现代简约", gradient: "from-blue-500 to-purple-600", description: "适合软件、应用类资源" },
-  { value: "gradient", label: "渐变炫彩", gradient: "from-pink-500 via-red-500 to-yellow-500", description: "适合创意、设计类资源" },
-  { value: "dark", label: "深色科技", gradient: "from-gray-900 via-purple-900 to-violet-900", description: "适合游戏、技术类资源" },
-  { value: "nature", label: "自然清新", gradient: "from-green-400 to-blue-500", description: "适合壁纸、自然类资源" },
-  { value: "warm", label: "温暖橙色", gradient: "from-orange-400 to-red-500", description: "适合书籍、阅读类资源" },
-  { value: "ocean", label: "海洋蓝调", gradient: "from-cyan-500 to-blue-500", description: "适合课程、学习类资源" },
-  { value: "sunset", label: "日落紫红", gradient: "from-pink-500 to-orange-500", description: "适合音乐、艺术类资源" },
-  { value: "forest", label: "森林绿意", gradient: "from-emerald-500 to-teal-500", description: "适合资料、报告类资源" },
-  { value: "business", label: "商务专业", gradient: "from-slate-600 to-blue-700", description: "适合商务、专业类资源" },
-  { value: "creative", label: "创意多彩", gradient: "from-violet-500 via-purple-500 to-pink-500", description: "适合创意、艺术类资源" },
+  { value: "modern", label: "现代简约", gradient: "from-blue-500 to-purple-600", description: "适合软件、应用类资源", shadow: true },
+  { value: "gradient", label: "渐变炫彩", gradient: "from-pink-500 via-red-500 to-yellow-500", description: "适合创意、设计类资源", shadow: true },
+  { value: "dark", label: "深色科技", gradient: "from-gray-900 via-purple-900 to-violet-900", description: "适合游戏、技术类资源", shadow: true },
+  { value: "nature", label: "自然清新", gradient: "from-green-400 to-blue-500", description: "适合壁纸、自然类资源", shadow: false },
+  { value: "warm", label: "温暖橙色", gradient: "from-orange-400 to-red-500", description: "适合书籍、阅读类资源", shadow: true },
+  { value: "ocean", label: "海洋蓝调", gradient: "from-cyan-500 to-blue-500", description: "适合课程、学习类资源", shadow: true },
+  { value: "sunset", label: "日落紫红", gradient: "from-pink-500 to-orange-500", description: "适合音乐、艺术类资源", shadow: true },
+  { value: "forest", label: "森林绿意", gradient: "from-emerald-500 to-teal-500", description: "适合资料、报告类资源", shadow: false },
+  { value: "business", label: "商务专业", gradient: "from-slate-600 to-blue-700", description: "适合商务、专业类资源", shadow: true },
+  { value: "creative", label: "创意多彩", gradient: "from-violet-500 via-purple-500 to-pink-500", description: "适合创意、艺术类资源", shadow: true },
+  { value: "clean", label: "简洁扁平", gradient: "from-white to-gray-100", description: "简洁扁平化设计", shadow: false },
 ]
 
 // 字体选项
@@ -56,6 +57,8 @@ export default function ImageGenerator({
   const [imageSize, setImageSize] = useState("1200x630")
   const [coverPosition, setCoverPosition] = useState("right")
   const [textPosition, setTextPosition] = useState("center")
+  const [layoutStyle, setLayoutStyle] = useState("simple")
+  const [showCardLayout, setShowCardLayout] = useState(false)
   
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const previewRef = useRef<HTMLDivElement>(null)
@@ -80,31 +83,42 @@ export default function ImageGenerator({
       canvas.width = width
       canvas.height = height
       
-      // 创建渐变背景
-      const gradient = ctx.createLinearGradient(0, 0, width, height)
-      const [fromColor, toColor] = selectedTheme.gradient.split(' ').slice(1, 3)
-      
-      // 简单的颜色映射（实际项目中可以使用更复杂的颜色解析）
-      const colorMap: Record<string, string> = {
-        'blue-500': '#3b82f6',
-        'purple-600': '#9333ea',
-        'pink-500': '#ec4899',
-        'red-500': '#ef4444',
-        'yellow-500': '#eab308',
-        'gray-900': '#111827',
-        'violet-900': '#4c1d95',
-        'green-400': '#4ade80',
-        'orange-400': '#fb923c',
-        'cyan-500': '#06b6d4',
-        'emerald-500': '#10b981',
-        'teal-500': '#14b8a6',
+      // 创建背景
+      if (selectedTheme.value === 'clean') {
+        // 简洁扁平化设计 - 纯白背景
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, width, height)
+      } else {
+        // 渐变背景
+        const gradient = ctx.createLinearGradient(0, 0, width, height)
+        const [fromColor, toColor] = selectedTheme.gradient.split(' ').slice(1, 3)
+        
+        // 扩展的颜色映射
+        const colorMap: Record<string, string> = {
+          'blue-500': '#3b82f6',
+          'purple-600': '#9333ea',
+          'pink-500': '#ec4899',
+          'red-500': '#ef4444',
+          'yellow-500': '#eab308',
+          'gray-900': '#111827',
+          'violet-900': '#4c1d95',
+          'green-400': '#4ade80',
+          'orange-400': '#fb923c',
+          'cyan-500': '#06b6d4',
+          'emerald-500': '#10b981',
+          'teal-500': '#14b8a6',
+          'white': '#ffffff',
+          'gray-100': '#f3f4f6',
+          'slate-600': '#475569',
+          'blue-700': '#1d4ed8',
+        }
+        
+        gradient.addColorStop(0, colorMap[fromColor] || '#3b82f6')
+        gradient.addColorStop(1, colorMap[toColor] || '#9333ea')
+        
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, 0, width, height)
       }
-      
-      gradient.addColorStop(0, colorMap[fromColor] || '#3b82f6')
-      gradient.addColorStop(1, colorMap[toColor] || '#9333ea')
-      
-      ctx.fillStyle = gradient
-      ctx.fillRect(0, 0, width, height)
       
       // 如果有封面图且需要显示
       if (showCover && coverUrl) {
@@ -158,11 +172,16 @@ export default function ImageGenerator({
       ctx.font = `bold ${fontSize}px ${fontFamily}`
       
       // 添加文字阴影
-      if (showShadow) {
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'
-        ctx.shadowBlur = 10
-        ctx.shadowOffsetX = 2
-        ctx.shadowOffsetY = 2
+      if (showShadow && selectedTheme.shadow) {
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'
+        ctx.shadowBlur = 8
+        ctx.shadowOffsetX = 1
+        ctx.shadowOffsetY = 1
+      } else {
+        ctx.shadowColor = 'transparent'
+        ctx.shadowBlur = 0
+        ctx.shadowOffsetX = 0
+        ctx.shadowOffsetY = 0
       }
       
       // 文字换行处理
@@ -245,7 +264,7 @@ export default function ImageGenerator({
       const timer = setTimeout(regenerate, 100)
       return () => clearTimeout(timer)
     }
-  }, [open, regenerate, style, font, fontSize, showCover, coverOpacity, textColor, showShadow, imageSize, coverPosition, textPosition])
+  }, [open, regenerate, style, font, fontSize, showCover, coverOpacity, textColor, showShadow, imageSize, coverPosition, textPosition, layoutStyle])
 
   return (
     <Dialog open={open} onOpenChange={(o) => (!o ? onClose() : null)}>
@@ -395,36 +414,52 @@ export default function ImageGenerator({
             {/* 布局设置 */}
             <div className="space-y-3">
               <Label>布局设置</Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-3">
                 <div className="space-y-2">
-                  <Label className="text-xs">文字位置</Label>
-                  <Select value={textPosition} onValueChange={setTextPosition}>
+                  <Label className="text-xs">布局风格</Label>
+                  <Select value={layoutStyle} onValueChange={setLayoutStyle}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="top">顶部</SelectItem>
-                      <SelectItem value="center">居中</SelectItem>
-                      <SelectItem value="bottom">底部</SelectItem>
+                      <SelectItem value="simple">简洁布局</SelectItem>
+                      <SelectItem value="card">卡片布局</SelectItem>
+                      <SelectItem value="hero">英雄布局</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
-                {coverUrl && (
+                <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label className="text-xs">封面位置</Label>
-                    <Select value={coverPosition} onValueChange={setCoverPosition}>
+                    <Label className="text-xs">文字位置</Label>
+                    <Select value={textPosition} onValueChange={setTextPosition}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="left">左侧</SelectItem>
+                        <SelectItem value="top">顶部</SelectItem>
                         <SelectItem value="center">居中</SelectItem>
-                        <SelectItem value="right">右侧</SelectItem>
+                        <SelectItem value="bottom">底部</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                )}
+                  
+                  {coverUrl && (
+                    <div className="space-y-2">
+                      <Label className="text-xs">封面位置</Label>
+                      <Select value={coverPosition} onValueChange={setCoverPosition}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="left">左侧</SelectItem>
+                          <SelectItem value="center">居中</SelectItem>
+                          <SelectItem value="right">右侧</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -488,7 +523,10 @@ export default function ImageGenerator({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex flex-col gap-2">
+          <div className="text-xs text-muted-foreground text-center">
+            💡 提示：选择"简洁扁平"主题可获得类似HTML预览的效果，选择其他主题可获得更丰富的视觉效果
+          </div>
           <Button variant="secondary" onClick={onClose}>
             关闭
           </Button>
