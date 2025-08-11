@@ -1,30 +1,109 @@
-# Chinese cloud storage site
+# 网盘资源分享文案生成器
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+一个智能的网盘资源分享文案生成工具，支持自动识别资源类型、生成多种风格的分享文案，并提供封面图处理功能。
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/guangzhimengsss-2516s-projects/v0-chinese-cloud-storage-site)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/QCb5oOsHD4p)
+## ✨ 主要功能
 
-## Overview
+### 📝 智能文案生成
+- **自动分类识别**：根据资源名称自动识别类型（软件、影视、课程、电子书等）
+- **多种文案风格**：朴素、营销、风趣、专业、治愈、潮流
+- **智能长度控制**：短、适中、偏长三种长度选项
+- **话题标签**：自动添加相关话题标签
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+### 🎨 封面图处理
+- **多种比例支持**：自适应、16:9、4:3、1:1、3:4、9:16等
+- **智能裁剪**：支持本地上传和外链图片裁剪
+- **一键生成封面**：生成包含资源名称的封面图片
+- **多种样式主题**：现代简约、渐变炫彩、深色科技等
 
-## Deployment
+### 🤖 AI工具集成
+- **文心一言**：一键生成更优质的文案
+- **即梦AI**：生成封面图片的AI提示词
 
-Your project is live at:
+## 🚀 新增功能
 
-**[https://vercel.com/guangzhimengsss-2516s-projects/v0-chinese-cloud-storage-site](https://vercel.com/guangzhimengsss-2516s-projects/v0-chinese-cloud-storage-site)**
+### 1. 自适应封面比例
+- 移除了16:9的强制限制
+- 支持多种预设比例：自适应、16:9、4:3、1:1、3:4、9:16、2:1、1:2
+- 适合不同平台的分享需求（百度贴吧、QQ频道等）
 
-## Build your app
+### 2. 一键生成封面图片
+- 生成包含资源名称的HTML图片
+- 支持多种样式主题和字体设置
+- 可调节封面透明度、文字颜色、阴影效果
+- 一键下载生成的图片
 
-Continue building your app on:
+### 3. 即梦AI集成
+- 根据资源类型生成专业的生图提示词
+- 自动复制提示词到剪贴板
+- 一键跳转到即梦AI网站
 
-**[https://v0.dev/chat/projects/QCb5oOsHD4p](https://v0.dev/chat/projects/QCb5oOsHD4p)**
+## 🛠️ 技术栈
 
-## How It Works
+- **前端框架**：Next.js 15 + React 18
+- **UI组件**：shadcn/ui + Tailwind CSS
+- **图片处理**：Canvas API + react-easy-crop
+- **类型安全**：TypeScript
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+## 📦 安装和运行
+
+```bash
+# 安装依赖
+npm install
+
+# 开发模式
+npm run dev
+
+# 构建生产版本
+npm run build
+
+# 启动生产服务器
+npm start
+```
+
+## 🎯 使用说明
+
+1. **输入资源信息**：填写资源名称和网盘链接
+2. **选择文案风格**：根据目标平台选择合适的风格
+3. **生成文案**：点击生成按钮获取文案
+4. **处理封面图**：
+   - 上传或输入图片链接
+   - 选择合适的裁剪比例
+   - 使用"生成封面"功能创建包含资源名称的图片
+5. **使用AI工具**：点击文心一言或即梦AI按钮获取更优质的内容
+
+## 🔧 自定义配置
+
+### 文案长度范围
+```typescript
+const LENGTH_RANGE = {
+  short: { min: 10, max: 50, label: "10~50字" },
+  medium: { min: 50, max: 100, label: "50~100字" },
+  long: { min: 100, max: 200, label: "100~200字" },
+}
+```
+
+### 封面图比例选项
+```typescript
+const ASPECT_RATIOS = [
+  { value: 0, label: "自适应（保持原比例）" },
+  { value: 16/9, label: "16:9（横版视频）" },
+  { value: 4/3, label: "4:3（传统横版）" },
+  { value: 1, label: "1:1（正方形）" },
+  // ... 更多比例
+]
+```
+
+## 📱 响应式设计
+
+- 支持移动端、平板、桌面端
+- 自适应布局，操作便捷
+- 触摸友好的交互设计
+
+## 🤝 贡献
+
+欢迎提交Issue和Pull Request来改进这个项目！
+
+## �� 许可证
+
+MIT License

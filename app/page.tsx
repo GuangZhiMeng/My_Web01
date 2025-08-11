@@ -1,9 +1,10 @@
 "use client"
 
 import type React from "react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -13,9 +14,10 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { Copy, ExternalLink, ImagePlus, Loader2, RotateCcw, Scissors, Trash2 } from "lucide-react"
+import { Copy, ExternalLink, ImagePlus, Loader2, RotateCcw, Scissors, Trash2, Sparkles, Download } from "lucide-react"
 import { cn } from "@/lib/utils"
 import CoverCropper from "@/components/cover-cropper"
+import ImageGenerator from "@/components/image-generator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // Accent wrapper (dopamine colors)
@@ -582,6 +584,62 @@ export default function Page() {
 
   // 裁剪弹窗
   const [cropOpen, setCropOpen] = useState(false)
+  
+  // 图片生成器弹窗
+  const [imageGeneratorOpen, setImageGeneratorOpen] = useState(false)
+  
+  // HTML代码输入器弹窗
+  const [htmlInputOpen, setHtmlInputOpen] = useState(false)
+  const [htmlCode, setHtmlCode] = useState("")
+  
+  // HTML预览弹窗
+  const [htmlPreviewOpen, setHtmlPreviewOpen] = useState(false)
+  const [previewScale, setPreviewScale] = useState(1)
+
+  // 自动调整预览窗口大小
+  const adjustPreviewSize = useCallback(() => {
+    if (!htmlCode.trim() || !htmlPreviewOpen) return
+    
+    // 等待DOM渲染完成
+    setTimeout(() => {
+      const container = document.getElementById('html-preview-container')
+      if (!container) return
+      
+      const rect = container.getBoundingClientRect()
+      const contentWidth = rect.width
+      const contentHeight = rect.height
+      
+      // 计算弹窗中的可用空间
+      const maxWidth = window.innerWidth * 0.95 - 48 // 减去左右内边距
+      const maxHeight = window.innerHeight * 0.95 - 140 // 减去顶部控制栏、内边距和底部空间
+      
+      // 如果内容超出弹窗，进行智能缩放
+      if (contentWidth > maxWidth || contentHeight > maxHeight) {
+        const scaleX = maxWidth / contentWidth
+        const scaleY = maxHeight / contentHeight
+        const scale = Math.min(scaleX, scaleY, 1)
+        
+        // 确保缩放不会太小，保持可读性
+        const finalScale = Math.max(scale, 0.5)
+        
+        container.style.transform = `scale(${finalScale})`
+        container.style.transformOrigin = 'center center'
+      } else {
+        container.style.transform = 'none'
+      }
+      
+      // 确保内容居中显示
+      container.style.margin = '0 auto'
+      container.style.display = 'block'
+    }, 150)
+  }, [htmlCode, htmlPreviewOpen])
+
+  // 监听预览窗口打开和内容变化
+  useEffect(() => {
+    if (htmlPreviewOpen) {
+      adjustPreviewSize()
+    }
+  }, [htmlPreviewOpen, htmlCode, adjustPreviewSize])
 
   // 清理旧的 blob URL
   useEffect(() => {
@@ -713,6 +771,276 @@ export default function Page() {
     })
   }
 
+  const openDeepSeek = () => {
+    // 根据资源类型选择横版或竖版提示词
+    const isVertical = effectiveCategory === "wallpaper" || effectiveCategory === "font" || effectiveCategory === "data"
+    
+    const deepSeekPrompt = isVertical ? 
+    `# 文章概念卡片设计师提示词（响应式版）
+
+## 核心定位
+你是一位专业的文章概念卡片设计师，专注于创建既美观又内容丰富的视觉概念卡片。你能智能分析文章内容，提取核心价值，并通过HTML5、TailwindCSS和专业图标库将精华以卡片形式呈现。
+
+## 【核心尺寸要求】
+- **宽度限制**：固定宽度750px，确保在移动设备上有良好显示效果
+- **高度自适应**：根据内容自动调整高度，不设固定限制
+- **安全区域**：实际内容区域宽度为690px（左右预留30px边距）
+- **内容完整性**：确保所有重要内容完整呈现，不截断关键信息
+
+## 设计任务
+创建一张宽度为750px、高度自适应的响应式卡片，完整呈现以下资源的核心内容：
+
+资源名称：${name.trim()}
+资源类型：${CATEGORY_LABEL[effectiveCategory]}
+资源描述：${copyText.trim() || "这是一个优质的网盘资源，值得收藏和使用"}
+
+## 四阶段智能设计流程
+
+### 🔍 第一阶段：内容分析与规划
+1. **核心内容萃取**
+* 提取资源名称、类型、核心价值
+* 识别主要特点和优势（3-7个关键点）
+* 提取用户收益和使用场景
+* 突出资源的重要性和实用性
+
+2. **内容密度检测**
+* 分析资源信息长度和复杂度
+* 根据内容密度选择呈现策略
+* 确保核心价值观点完整保留
+
+3. **内容预算分配**
+* 基于内容重要性分配呈现优先级
+* 分配图标与文字比例（内容面积占65%，图标和留白占35%）
+* 为视觉元素和留白预留足够空间（至少25%）
+
+## 以下为资源内容
+资源名称：${name.trim()}
+资源类型：${CATEGORY_LABEL[effectiveCategory]}
+资源描述：${copyText.trim() || "这是一个优质的网盘资源，值得收藏和使用"}
+
+请生成一个完整的HTML文件，包含所有必要的CSS样式，确保可以直接在浏览器中打开使用。` :
+
+    `# 文章概念卡片设计师提示词
+
+## 核心定位
+你是一位专业的文章概念卡片设计师，专注于创建既美观又严格遵守尺寸限制的视觉概念卡片。你能智能分析文章内容，提取核心价值，并通过HTML5、TailwindCSS和专业图标库将精华以卡片形式呈现。
+
+## 【核心尺寸要求】
+- **固定尺寸**：1080px × 800px，任何内容都不得超出此边界
+- **安全区域**：实际内容区域为1020px × 740px（四周预留30px边距）
+- **溢出处理**：宁可减少内容，也不允许任何元素溢出边界
+
+## 设计任务
+创建一张严格遵守1080px×800px尺寸的网页风格卡片，呈现以下资源的核心内容：
+
+资源名称：${name.trim()}
+资源类型：${CATEGORY_LABEL[effectiveCategory]}
+资源描述：${copyText.trim() || "这是一个优质的网盘资源，值得收藏和使用"}
+
+## 四阶段智能设计流程
+
+### 🔍 第一阶段：内容分析与规划
+1. **核心内容萃取**
+* 提取资源名称、类型、核心价值
+* 识别主要特点和优势（限制在3-5个点）
+* 提取用户收益和使用场景
+* 突出资源的重要性和实用性
+
+2. **内容密度检测**
+* 分析资源信息长度和复杂度，计算"内容密度指数"(CDI)
+* 根据CDI选择呈现策略：低密度完整展示，中密度筛选展示，高密度高度提炼
+
+3. **内容预算分配**
+* 基于密度分析设定区域内容量上限（标题区域不超过2行，主要内容不超过5个要点）
+* 分配图标与文字比例（内容面积最多占70%，图标和留白占30%）
+* 为视觉元素和留白预留足够空间（至少20%）
+
+## 以下为资源内容
+资源名称：${name.trim()}
+资源类型：${CATEGORY_LABEL[effectiveCategory]}
+资源描述：${copyText.trim() || "这是一个优质的网盘资源，值得收藏和使用"}
+
+请生成一个完整的HTML文件，包含所有必要的CSS样式，确保可以直接在浏览器中打开使用。`
+    
+    // 复制提示词到剪贴板
+    navigator.clipboard.writeText(deepSeekPrompt).then(() => {
+      toast({ 
+        title: "DeepSeek提示词已复制", 
+        description: `已准备${isVertical ? "竖版" : "横版"}封面设计提示词`,
+        duration: 3000
+      })
+      
+      setTimeout(() => {
+        const url = `https://chat.deepseek.com/`
+        window.open(url, "_blank", "noopener,noreferrer")
+        
+        toast({ 
+          title: "已打开DeepSeek", 
+          description: "请按 Ctrl+V (Mac: Cmd+V) 粘贴提示词到对话框中",
+          duration: 5000
+        })
+      }, 500)
+      
+    }).catch(() => {
+      toast({ 
+        title: "复制失败", 
+        description: "请手动复制以下提示词",
+        duration: 5000
+      })
+      
+      const url = `https://chat.deepseek.com/`
+      window.open(url, "_blank", "noopener,noreferrer")
+      
+      console.log("DeepSeek提示词内容：", deepSeekPrompt)
+    })
+  }
+
+  const openJimeng = () => {
+    const q = name.trim()
+    if (!q) {
+      toast({ title: "请先填写资源名称再去即梦AI生成封面", variant: "destructive" })
+      return
+    }
+    
+    // 根据资源类型生成更详细的生图提示词
+    const category = effectiveCategory
+    const categoryName = CATEGORY_LABEL[category]
+    
+    // 为不同资源类型定义更详细的描述
+    const categoryDescriptions = {
+      app: {
+        style: "科技感界面设计，包含应用图标和现代化UI元素",
+        background: "蓝色渐变背景，体现科技感",
+        mainColor: "蓝色系，专业且现代",
+        elements: "应用图标、界面元素、科技线条"
+      },
+      video: {
+        style: "电影海报设计，包含影视元素和戏剧性光影",
+        background: "深色渐变背景，营造观影氛围",
+        mainColor: "深色系配金色或白色",
+        elements: "电影胶片、播放按钮、影视元素"
+      },
+      course: {
+        style: "教育主题设计，包含学习图标和知识元素",
+        background: "蓝色渐变背景，体现专业学习氛围",
+        mainColor: "蓝色系，专业且可信",
+        elements: "书本、学习图标、知识传递"
+      },
+      ebook: {
+        style: "书籍封面设计，包含阅读元素和知识图标",
+        background: "暖色调渐变背景，营造阅读氛围",
+        mainColor: "暖色系，温馨且易读",
+        elements: "电子书、文档、阅读场景"
+      },
+      template: {
+        style: "设计模板风格，包含创意元素和设计图标",
+        background: "多彩渐变背景，体现创意设计",
+        mainColor: "多彩系，创意且活力",
+        elements: "设计模板、创意元素、工具图标"
+      },
+      music: {
+        style: "音乐专辑设计，包含音符元素和动感线条",
+        background: "紫色渐变背景，营造音乐氛围",
+        mainColor: "紫色系，动感且艺术",
+        elements: "音符、音乐波形、音频元素"
+      },
+      game: {
+        style: "游戏主题设计，包含游戏元素和炫酷效果",
+        background: "深色渐变背景，营造游戏氛围",
+        mainColor: "深色系配亮色，炫酷且吸引",
+        elements: "游戏手柄、像素风格、游戏元素"
+      },
+      font: {
+        style: "字体设计风格，包含文字排版元素",
+        background: "黑白简约背景，体现设计专业",
+        mainColor: "黑白系，简约且专业",
+        elements: "字体展示、排版设计、文字艺术"
+      },
+      wallpaper: {
+        style: "壁纸风格设计，包含自然风景和视觉元素",
+        background: "自然色彩渐变背景，体现美感",
+        mainColor: "自然色系，美观且舒适",
+        elements: "精美壁纸、自然风景、艺术设计"
+      },
+      data: {
+        style: "数据报告设计，包含图表元素和商务图标",
+        background: "蓝色商务背景，体现专业氛围",
+        mainColor: "蓝色系，专业且可信",
+        elements: "数据图表、分析报告、信息可视化"
+      },
+      dev: {
+        style: "开发编程设计，包含代码元素和技术图标",
+        background: "深色渐变背景，营造技术氛围",
+        mainColor: "深色系配亮色，技术感强",
+        elements: "代码编辑器、编程元素、技术图标"
+      },
+      unknown: {
+        style: "通用设计风格，现代简约且专业",
+        background: "渐变背景，与资源类型相协调",
+        mainColor: "与资源类型相协调的专业色彩",
+        elements: "通用设计元素，现代简约风格"
+      }
+    }
+    
+    const desc = categoryDescriptions[category] || categoryDescriptions.unknown
+    
+    const imagePrompt = `【即梦AI生图提示词】
+
+资源名称：${q}
+资源类型：${categoryName}
+
+请根据以上资源信息，生成一张高质量的封面图片，要求：
+
+1. 风格：现代简约、专业美观
+2. 构图：居中布局，突出资源名称
+3. 色彩：渐变背景，与资源类型相匹配
+4. 元素：可以包含相关的图标或装饰元素
+5. 文字：清晰可读，字体现代
+6. 尺寸：1200x630像素，适合社交媒体分享
+
+具体描述：
+${desc.style}
+背景：${desc.background}
+主色调：${desc.mainColor}
+装饰元素：${desc.elements}
+文字：白色或深色，确保可读性
+整体效果：专业、现代、吸引眼球
+
+请生成一张高质量的封面图片。`
+    
+    // 复制提示词到剪贴板
+    navigator.clipboard.writeText(imagePrompt).then(() => {
+      toast({ 
+        title: "即梦生图提示词已复制", 
+        description: "已准备就绪，请前往即梦AI使用",
+        duration: 3000
+      })
+      
+      setTimeout(() => {
+        const url = `https://jimeng.jianying.com/ai-tool/home/?utm_medium=aitools&utm_source=jh1&utm_campaign=null&utm_content=49213666j`
+        window.open(url, "_blank", "noopener,noreferrer")
+        
+        toast({ 
+          title: "已打开即梦AI", 
+          description: "请按 Ctrl+V (Mac: Cmd+V) 粘贴提示词到对话框中",
+          duration: 5000
+        })
+      }, 500)
+      
+    }).catch(() => {
+      toast({ 
+        title: "复制失败", 
+        description: "请手动复制以下提示词",
+        duration: 5000
+      })
+      
+      const url = `https://jimeng.jianying.com/ai-tool/home/?utm_medium=aitools&utm_source=jh1&utm_campaign=null&utm_content=49213666j`
+      window.open(url, "_blank", "noopener,noreferrer")
+      
+      console.log("即梦提示词内容：", imagePrompt)
+    })
+  }
+
   const applyCoverUrl = (value: string) => {
     if (prevBlobUrlRef.current) {
       URL.revokeObjectURL(prevBlobUrlRef.current)
@@ -771,7 +1099,7 @@ export default function Page() {
             {"网盘资源分享文案生成器"}
           </h1>
           <p className="text-muted-foreground mt-1 text-sm sm:text-base">
-            输入资源名称与链接：自动识别类型并生成功能性中文文案。封面图可选：去百度挑选或上传并裁剪，统一适配 16:9。
+            输入资源名称与链接：自动识别类型并生成功能性中文文案。封面图可选：去百度挑选或上传并裁剪，支持多种比例自适应。一键生成包含资源名称的封面图片。
           </p>
         </header>
 
@@ -1189,6 +1517,8 @@ export default function Page() {
                         </div>
                       </Button>
                       
+
+                      
                       <span className="text-[10px] text-muted-foreground">
                         {customPrompt.trim() ? "自定义提示词" : "默认提示词"}
                       </span>
@@ -1207,7 +1537,7 @@ export default function Page() {
               <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>封面图（可选）</CardTitle>
-                  <CardDescription>去百度图片挑选或本地上传，然后一键裁剪，自动适配 16:9 封面。</CardDescription>
+                  <CardDescription>去百度图片挑选或本地上传，支持多种比例自适应裁剪。使用DeepSeek生成封面HTML文件，或使用HTML输入器预览并下载图片。</CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -1274,6 +1604,19 @@ export default function Page() {
                           <ImagePlus className="mr-1.5 h-3.5 w-3.5" />
                           上传图片
                         </Button>
+                        <Button
+                          type="button"
+                          onClick={openJimeng}
+                          variant="outline"
+                          size="sm"
+                          disabled={!name.trim()}
+                          className={cn("h-8 px-3 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 hover:from-green-100 hover:to-emerald-100", btnFx)}
+                          onMouseDown={ripple}
+                          title="使用即梦AI生成封面图片"
+                        >
+                          <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                          即梦AI
+                        </Button>
                       </div>
                     </div>
 
@@ -1292,6 +1635,42 @@ export default function Page() {
                         >
                           <Scissors className="mr-1.5 h-3.5 w-3.5" />
                           调整/裁剪
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={openDeepSeek}
+                          size="sm"
+                          disabled={!name.trim()}
+                          title="使用DeepSeek生成封面HTML文件"
+                          className={cn("h-8 px-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600", btnFx)}
+                          onMouseDown={ripple}
+                        >
+                          <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                          DeepSeek
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={() => setImageGeneratorOpen(true)}
+                          variant="outline"
+                          size="sm"
+                          disabled={!name.trim()}
+                          title="生成包含资源名称的封面图片"
+                          className={cn("h-8 px-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-200 hover:from-blue-100 hover:to-cyan-100", btnFx)}
+                          onMouseDown={ripple}
+                        >
+                          <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                          生成封面
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={() => setHtmlInputOpen(true)}
+                          size="sm"
+                          title="输入HTML代码并生成图片"
+                          className={cn("h-8 px-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600", btnFx)}
+                          onMouseDown={ripple}
+                        >
+                          <Download className="mr-1.5 h-3.5 w-3.5" />
+                          HTML输入器
                         </Button>
                         <Button
                           type="button"
@@ -1314,9 +1693,15 @@ export default function Page() {
 
                 <div className="flex items-start gap-2 rounded-lg bg-gradient-to-r from-teal-50 to-emerald-50 px-3 py-2.5 border border-teal-200">
                   <div className="w-1.5 h-1.5 bg-teal-400 rounded-full mt-1.5 flex-shrink-0"></div>
-                  <p className="text-xs text-teal-800 font-medium leading-relaxed">
-                    提示：裁剪功能优先用于"本地上传"的图片；部分外链图片因跨域限制可能无法导出裁剪结果。
-                  </p>
+                  <div className="text-xs text-teal-800 font-medium leading-relaxed space-y-1">
+                    <p>💡 <strong>功能提示：</strong></p>
+                    <p>• 支持多种比例自适应裁剪，适合不同平台分享需求</p>
+                    <p>• 即梦AI可根据资源类型生成专业的生图提示词</p>
+                    <p>• 生成封面功能支持多种尺寸和样式自定义</p>
+                    <p>• DeepSeek可生成专业的封面HTML文件</p>
+                    <p>• HTML输入器可预览并下载为高质量图片</p>
+                    <p>• 所有功能都支持自适应，无需强制16:9限制</p>
+                  </div>
                 </div>
               </CardContent>
             </AccentCard>
@@ -1332,7 +1717,7 @@ export default function Page() {
           open={cropOpen}
           onClose={() => setCropOpen(false)}
           imageSrc={coverUrl}
-          aspect={16 / 9}
+          aspect={0}
           allowExport={coverOrigin !== "url"}
           onApply={(blobUrl) => {
             if (prevBlobUrlRef.current) {
@@ -1344,6 +1729,299 @@ export default function Page() {
             setCoverOrigin("upload")
           }}
         />
+
+        {/* 图片生成器弹窗 */}
+        <ImageGenerator
+          open={imageGeneratorOpen}
+          resourceName={name}
+          coverUrl={coverUrl}
+          onClose={() => setImageGeneratorOpen(false)}
+        />
+
+        {/* HTML代码输入器弹窗 */}
+        <Dialog open={htmlInputOpen} onOpenChange={setHtmlInputOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+            <DialogHeader>
+              <DialogTitle>HTML代码输入器</DialogTitle>
+              <DialogDescription>
+                输入DeepSeek生成的HTML代码，预览效果并下载为图片
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[80vh]">
+              {/* 左侧：代码输入 */}
+              <div className="flex flex-col space-y-4">
+                <div>
+                  <Label htmlFor="html-code">HTML代码</Label>
+                  <Textarea
+                    id="html-code"
+                    placeholder="请粘贴DeepSeek生成的HTML代码..."
+                    value={htmlCode}
+                    onChange={(e) => setHtmlCode(e.target.value)}
+                    className="h-[70vh] font-mono text-sm"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => {
+                      // 强制重新渲染预览区域
+                      setHtmlCode(htmlCode + ' ')
+                      setTimeout(() => setHtmlCode(htmlCode.trim()), 10)
+                    }}
+                    disabled={!htmlCode.trim()}
+                    className="flex-1"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    刷新预览
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      if (!htmlCode.trim()) {
+                        toast({ title: "请先输入HTML代码", variant: "destructive" })
+                        return
+                      }
+                      
+                      // 计算合适的缩放比例
+                      const tempDiv = document.createElement('div')
+                      tempDiv.innerHTML = htmlCode
+                      tempDiv.style.position = 'absolute'
+                      tempDiv.style.left = '-9999px'
+                      tempDiv.style.width = 'auto'
+                      tempDiv.style.height = 'auto'
+                      tempDiv.style.visibility = 'hidden'
+                      document.body.appendChild(tempDiv)
+                      
+                      // 等待DOM渲染完成
+                      await new Promise(resolve => setTimeout(resolve, 100))
+                      
+                      // 获取内容尺寸
+                      const rect = tempDiv.getBoundingClientRect()
+                      const contentWidth = rect.width || 800
+                      const contentHeight = rect.height || 600
+                      
+                      // 计算缩放比例（基于窗口大小）
+                      const maxWidth = window.innerWidth * 0.8
+                      const maxHeight = window.innerHeight * 0.6
+                      const scaleX = maxWidth / contentWidth
+                      const scaleY = maxHeight / contentHeight
+                      const scale = Math.min(scaleX, scaleY, 1) // 不超过100%
+                      
+                      // 设置合理的缩放比例
+                      const finalScale = Math.max(0.3, scale)
+                      
+                      setPreviewScale(finalScale)
+                      document.body.removeChild(tempDiv)
+                      setHtmlPreviewOpen(true)
+                    }}
+                    variant="outline"
+                    title="在新窗口中完整预览HTML效果"
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    查看预览
+                  </Button>
+                  <Button
+                    onClick={() => setHtmlCode("")}
+                    variant="outline"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    清空
+                  </Button>
+                </div>
+              </div>
+              
+              {/* 右侧：预览和下载 */}
+              <div className="flex flex-col space-y-4">
+                <div>
+                  <Label>预览效果</Label>
+                  <div className="border rounded-lg h-[70vh] overflow-auto bg-white">
+                    {htmlCode.trim() ? (
+                      <div className="p-4">
+                        <div 
+                          dangerouslySetInnerHTML={{ __html: htmlCode }}
+                          className="transform scale-75 origin-top-left"
+                          style={{ 
+                            width: '133.33%', 
+                            height: 'auto',
+                            minHeight: '800px'
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-muted-foreground">
+                        请输入HTML代码查看预览
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={async () => {
+                      if (!htmlCode.trim()) {
+                        toast({ title: "请先输入HTML代码", variant: "destructive" })
+                        return
+                      }
+                      
+                      try {
+                        toast({ 
+                          title: "开始生成图片", 
+                          description: "正在处理HTML代码...", 
+                          duration: 2000
+                        })
+                        
+                        // 创建新窗口来渲染HTML
+                        const newWindow = window.open('', '_blank', 'width=1200,height=900')
+                        if (!newWindow) {
+                          throw new Error('无法打开新窗口')
+                        }
+                        
+                        // 写入HTML内容
+                        newWindow.document.write(htmlCode)
+                        newWindow.document.close()
+                        
+                        // 等待页面加载完成
+                        await new Promise(resolve => {
+                          newWindow.onload = resolve
+                          setTimeout(resolve, 1000) // 备用超时
+                        })
+                        
+                        // 使用html2canvas截图
+                        const html2canvas = await import('html2canvas')
+                        const screenshot = await html2canvas.default(newWindow.document.body, {
+                          width: 1080,
+                          height: 800,
+                          scale: 2,
+                          useCORS: true,
+                          allowTaint: true,
+                          backgroundColor: '#ffffff',
+                          logging: false,
+                          removeContainer: true,
+                          foreignObjectRendering: false
+                        })
+                        
+                        // 关闭新窗口
+                        newWindow.close()
+                        
+                        // 下载图片
+                        const link = document.createElement('a')
+                        link.download = `封面图片_${name.trim() || '资源'}_${new Date().getTime()}.png`
+                        link.href = screenshot.toDataURL('image/png', 0.95)
+                        link.click()
+                        
+                        toast({ 
+                          title: "图片下载成功", 
+                          description: "已成功生成高质量PNG图片", 
+                          duration: 3000
+                        })
+                      } catch (error) {
+                        console.error('生成图片失败:', error)
+                        toast({ 
+                          title: "生成图片失败", 
+                          description: "请尝试使用'下载HTML'功能保存文件", 
+                          variant: "destructive" 
+                        })
+                      }
+                    }}
+                    disabled={!htmlCode.trim()}
+                    className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    下载图片
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      if (!htmlCode.trim()) {
+                        toast({ title: "请先输入HTML代码", variant: "destructive" })
+                        return
+                      }
+                      
+                      // 下载HTML文件
+                      const blob = new Blob([htmlCode], { type: 'text/html' })
+                      const url = URL.createObjectURL(blob)
+                      const link = document.createElement('a')
+                      link.download = `封面HTML_${name.trim() || '资源'}_${new Date().getTime()}.html`
+                      link.href = url
+                      link.click()
+                      URL.revokeObjectURL(url)
+                      
+                      toast({ title: "HTML文件下载成功", description: "已保存到下载文件夹" })
+                    }}
+                    variant="outline"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    下载HTML
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* HTML预览弹窗 - 弹窗中完整显示 */}
+        <Dialog open={htmlPreviewOpen} onOpenChange={setHtmlPreviewOpen}>
+          <DialogContent 
+            className="p-0 overflow-hidden shadow-2xl"
+            style={{
+              width: 'auto',
+              height: 'auto',
+              maxWidth: '95vw',
+              maxHeight: '95vh',
+              minWidth: '600px',
+              minHeight: '500px',
+              borderRadius: '12px'
+            }}
+          >
+            <DialogTitle className="sr-only">HTML完整预览</DialogTitle>
+            <div className="flex flex-col">
+              {/* 顶部控制栏 */}
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 flex-shrink-0">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-800">HTML完整预览</h2>
+                  <p className="text-sm text-gray-600">弹窗中完整显示HTML效果</p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => setHtmlPreviewOpen(false)}
+                    variant="outline"
+                    size="sm"
+                    className="hover:bg-gray-100"
+                  >
+                    关闭
+                  </Button>
+                </div>
+              </div>
+              
+              {/* 弹窗预览内容区域 */}
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+                {htmlCode.trim() ? (
+                  <div className="flex justify-center items-center">
+                    <div 
+                      id="html-preview-container"
+                      className="shadow-xl rounded-lg overflow-hidden"
+                      dangerouslySetInnerHTML={{ __html: htmlCode }}
+                      style={{
+                        width: 'auto',
+                        height: 'auto',
+                        minWidth: 'fit-content',
+                        minHeight: 'fit-content',
+                        maxWidth: 'none',
+                        display: 'block',
+                        backgroundColor: 'white'
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center p-12 text-gray-500 bg-white rounded-lg border-2 border-dashed border-gray-300">
+                    <div className="text-center">
+                      <div className="text-4xl mb-2">📄</div>
+                      <div className="text-lg font-medium">请输入HTML代码查看预览</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   )

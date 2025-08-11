@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Info } from "lucide-react"
 
 type CoverCropperProps = {
@@ -17,6 +18,18 @@ type CoverCropperProps = {
   onApply?: (blobUrl: string, blob: Blob) => void
   allowExport?: boolean // 对外链图像可能无法导出，允许显示提示
 }
+
+// 预设的宽高比选项
+const ASPECT_RATIOS = [
+  { value: 0, label: "自适应（保持原比例）" },
+  { value: 16/9, label: "16:9（横版视频）" },
+  { value: 4/3, label: "4:3（传统横版）" },
+  { value: 1, label: "1:1（正方形）" },
+  { value: 3/4, label: "3:4（竖版）" },
+  { value: 9/16, label: "9:16（手机竖版）" },
+  { value: 2/1, label: "2:1（超宽横版）" },
+  { value: 1/2, label: "1:2（超窄竖版）" },
+]
 
 async function createCroppedBlob(imageSrc: string, crop: Area): Promise<Blob> {
   const img = new Image()
@@ -63,7 +76,7 @@ async function createCroppedBlob(imageSrc: string, crop: Area): Promise<Blob> {
 export default function CoverCropper({
   open = false,
   imageSrc = "",
-  aspect = 16 / 9,
+  aspect = 0, // 默认改为0，表示自适应
   onClose = () => {},
   onApply = () => {},
   allowExport = true,
@@ -72,6 +85,7 @@ export default function CoverCropper({
   const [zoom, setZoom] = useState(1.2)
   const [areaPixels, setAreaPixels] = useState<Area | null>(null)
   const [exporting, setExporting] = useState(false)
+  const [selectedAspect, setSelectedAspect] = useState(aspect)
 
   useEffect(() => {
     if (!open) {
@@ -79,8 +93,9 @@ export default function CoverCropper({
       setZoom(1.2)
       setAreaPixels(null)
       setExporting(false)
+      setSelectedAspect(aspect)
     }
-  }, [open])
+  }, [open, aspect])
 
   const onCropComplete = useCallback((_area: Area, areaPx: Area) => {
     setAreaPixels(areaPx)
@@ -102,46 +117,76 @@ export default function CoverCropper({
     }
   }
 
+  const currentAspectLabel = ASPECT_RATIOS.find(ratio => ratio.value === selectedAspect)?.label || "自适应"
+
   return (
     <Dialog open={open} onOpenChange={(o) => (!o ? onClose() : null)}>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle>调整封面位置与裁剪（16:9）</DialogTitle>
+          <DialogTitle>调整封面位置与裁剪</DialogTitle>
         </DialogHeader>
 
         {!allowExport ? (
           <Alert className="mb-2">
             <Info className="h-4 w-4" />
             <AlertDescription>
-              当前为外链图片，可能因跨域导致无法导出裁剪后的结果。建议“本地上传”后再裁剪，成功率更高。
+              当前为外链图片，可能因跨域导致无法导出裁剪后的结果。建议"本地上传"后再裁剪，成功率更高。
             </AlertDescription>
           </Alert>
         ) : null}
 
-        <div className="relative aspect-video w-full overflow-hidden rounded-md border bg-black/80">
-          {imageSrc ? (
-            <Cropper
-              image={imageSrc}
-              crop={crop}
-              zoom={zoom}
-              aspect={aspect}
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={onCropComplete}
-              objectFit="cover"
-              zoomWithScroll
-              restrictPosition
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-              {"未选择图片"}
-            </div>
-          )}
-        </div>
+        <div className="space-y-4">
+          {/* 宽高比选择 */}
+          <div className="space-y-2">
+            <Label htmlFor="aspect-ratio">裁剪比例</Label>
+            <Select value={selectedAspect.toString()} onValueChange={(v) => setSelectedAspect(parseFloat(v))}>
+              <SelectTrigger id="aspect-ratio">
+                <SelectValue placeholder="选择裁剪比例" />
+              </SelectTrigger>
+              <SelectContent>
+                {ASPECT_RATIOS.map((ratio) => (
+                  <SelectItem key={ratio.value} value={ratio.value.toString()}>
+                    {ratio.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              当前选择：{currentAspectLabel} {selectedAspect > 0 ? `(${selectedAspect.toFixed(2)})` : ""}
+            </p>
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="zoom">缩放</Label>
-          <Slider id="zoom" min={1} max={3} step={0.01} value={[zoom]} onValueChange={(v) => setZoom(v[0] ?? 1)} />
+          {/* 裁剪预览区域 */}
+          <div className="relative w-full overflow-hidden rounded-md border bg-black/80" style={{
+            aspectRatio: selectedAspect > 0 ? selectedAspect : 'auto',
+            minHeight: '300px',
+            maxHeight: '500px'
+          }}>
+            {imageSrc ? (
+              <Cropper
+                image={imageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={selectedAspect > 0 ? selectedAspect : undefined}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                objectFit="cover"
+                zoomWithScroll
+                restrictPosition
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+                {"未选择图片"}
+              </div>
+            )}
+          </div>
+
+          {/* 缩放控制 */}
+          <div className="space-y-2">
+            <Label htmlFor="zoom">缩放</Label>
+            <Slider id="zoom" min={1} max={3} step={0.01} value={[zoom]} onValueChange={(v) => setZoom(v[0] ?? 1)} />
+          </div>
         </div>
 
         <DialogFooter>
